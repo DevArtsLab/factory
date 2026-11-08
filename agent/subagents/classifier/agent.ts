@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { MODELS } from "../../lib/models.js";
+import { MODEL_CONTEXT_WINDOW_TOKENS, MODELS } from "../../lib/models.js";
 
 /**
  * Station 1: triage.
@@ -24,5 +24,6 @@ export default defineAgent({
     "clarification. Fast triage only; no analysis or implementation. The caller passes " +
     "the work item verbatim in the message.",
   model: MODELS.classifier,
+  modelContextWindowTokens: MODEL_CONTEXT_WINDOW_TOKENS,
   tool: false,
 });

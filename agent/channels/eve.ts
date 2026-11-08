@@ -16,7 +16,9 @@ const localDevAuth = localDev();
  */
 const localDevUser: AuthFn<Request> = async (request) => {
   const local = await localDevAuth(request);
-  return local ? { ...local, principalType: "user" } : null;
+  return local
+    ? { ...local, allowAgentInfo: true, principalType: "user" }
+    : null;
 };
 
 export default eveChannel({ auth: [localDevUser, vercelOidc()] });

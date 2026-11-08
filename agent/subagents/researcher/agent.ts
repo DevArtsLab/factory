@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { MODELS } from "../../lib/models.js";
+import { MODEL_CONTEXT_WINDOW_TOKENS, MODELS } from "../../lib/models.js";
 
 /**
  * Fresh-context web-research subagent.
@@ -30,5 +30,6 @@ export default defineAgent({
     "long research memo as an artifact and return its id for later stations. The caller " +
     "passes the question and any known context in the message.",
   model: MODELS.researcher,
+  modelContextWindowTokens: MODEL_CONTEXT_WINDOW_TOKENS,
   tool: false,
 });

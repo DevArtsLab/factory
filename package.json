@@ -20,6 +20,7 @@
     "validate": "pnpm run check && pnpm run typecheck && eve info"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.87",
     "@github-tools/eve-extension": "^0.10.0",
     "@vercel/blob": "^2.8.2",
     "@vercel/connect": "^2.9.0",

@@ -1,5 +1,5 @@
 import { defineAgent } from "eve";
-import { MODELS } from "./lib/models.js";
+import { MODEL_CONTEXT_WINDOW_TOKENS, MODELS } from "./lib/models.js";
 
 /**
  * Root agent runtime configuration.
@@ -20,4 +20,5 @@ export default defineAgent({
     sessionUsage: ({ total }) => total.outputTokens >= 100_000,
   },
   model: MODELS.orchestrator,
+  modelContextWindowTokens: MODEL_CONTEXT_WINDOW_TOKENS,
 });
