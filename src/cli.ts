@@ -1,5 +1,12 @@
 import path from "node:path";
-import { ensureClone, issueText, openDraftPr, originRepo } from "./git.ts";
+import {
+  addWorktree,
+  defaultBranch,
+  ensureClone,
+  issueText,
+  openDraftPr,
+  originRepo,
+} from "./git.ts";
 import { type PipelineReport, runPipeline } from "./pipeline.ts";
 
 // factory — drive the four-station pipeline with local `devin acp` sessions.
@@ -69,7 +76,7 @@ const usage = `Usage:
   factory run --issue <n>               run the pipeline on GitHub issue n
 Options:
   --repo owner/name    target repo (default: this checkout's origin)
-  --workdir <dir>      clone directory (default: .factory/repo)
+  --workdir <dir>      run directory override (default: .factory/runs/<ts>)
   --cycles <n>         max implementer revision cycles (default: 2)
   --no-pr              stop before opening the draft PR
   --verbose            stream station tool-call logs to stderr
@@ -103,12 +110,17 @@ const main = async () => {
     process.exit(args.command === "run" ? 1 : 0);
   }
   const repo = args.repo ?? (await originRepo());
-  const workdir = path.resolve(args.workdir ?? ".factory/repo");
-  const artifactsDir = path.resolve(".factory/artifacts");
   const workItem = args.text ?? (await issueText(repo, args.issue as number));
 
-  await ensureClone(repo, workdir);
-  console.error(`repo: ${repo} -> ${workdir}`);
+  const cloneDir = path.resolve(".factory/repo");
+  const runId = new Date().toISOString().replaceAll(/[:.]/gu, "-").slice(0, 19);
+  const runDir = path.resolve(args.workdir ?? `.factory/runs/${runId}`);
+  const artifactsDir = path.join(runDir, "artifacts");
+
+  await ensureClone(repo, cloneDir);
+  const base = await defaultBranch(cloneDir);
+  const workdir = await addWorktree(cloneDir, runDir, base);
+  console.error(`repo: ${repo} -> ${workdir} (base ${base})`);
 
   const onLog = args.verbose
     ? (line: string) => console.error(line)

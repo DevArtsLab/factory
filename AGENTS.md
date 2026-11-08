@@ -15,7 +15,7 @@ The earlier version of this template ran on the eve framework; that version live
 - `src/git.ts` — clone (`ssh` remote, user's key), branch validation (`factory/*` only, never `main`/`master`), `gh` issue fetch + draft PR creation.
 - `src/cli.ts` — the `factory` entry point.
 - `prompts/*.md` — station procedures, adapted from the eve station `instructions.md` files: artifacts are real files in the run's artifacts dir, git ops are plain git.
-- `.factory/` (gitignored) — `repo/` clone of the target repository, `artifacts/` for station handoff documents.
+- `.factory/` (gitignored) — `repo/` is a shared cache clone (fetch-only); each run gets an isolated worktree at `runs/<ts>/repo` detached at the default branch's tip, so station commands can't leave stray files in a tree another run commits. `runs/<ts>/artifacts/` holds station handoff documents.
 
 ## Commands
 
@@ -38,5 +38,5 @@ Requires: Node 24.x (runs `.ts` natively via type stripping — keep to erasable
 - Station output is one fenced `json` block at the end of the reply, shape-checked in `src/pipeline.ts` (`REQUIRED`). Freeform text before the block is allowed.
 - A station that needs to hand off a long document writes it in the run's artifacts directory (absolute path is injected into its prompt) and returns the filename.
 - The implementer pushes `factory/<type>-<slug>` branches with plain git; the orchestrator verifies the branch exists on the remote before reviewing, and opens the draft PR itself with `gh pr create --draft`.
-- Sessions have full local shell access (no sandbox). Keep git safety in the prompts and the orchestrator checks: validated branch names, no pushes to protected branches, no `origin` rewriting.
+- Sessions have full local shell access (no sandbox). Safety is enforced twice: prompts state the rules, and `permissionAllowed` in `src/acp.ts` enforces them at the ACP layer — pushes must name a `factory/*` branch (never force, never `main`/`master`), remote rewrites and `git config user.*` are denied outright. Plus orchestrator checks: validated branch names verified against the remote before review.
 - Station timeouts: 30 minutes per `session/prompt` in `src/acp.ts`.

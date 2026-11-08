@@ -46,6 +46,41 @@ interface PendingCall {
   resolve: (value: unknown) => void;
 }
 
+const PROTECTED_REFSPEC =
+  /(?::|HEAD:|for[a-z]*\s)(?:main|master)\b|\b(?:main|master):/u;
+const FORCE_PUSH = /--force(?:-with-lease)?\b|--delete\b|\s-f[\s"']/u;
+const REMOTE_WRITE = /\bgit\s+remote\s+(?:set-url|add|remove|rm)\b/u;
+const GIT_IDENTITY_WRITE = /\bgit\s+config\b[^"\\]*user\.(?:name|email)/u;
+const GIT_PUSH = /\bgit\s+push\b/u;
+
+/**
+ * Client-side guard on the permission auto-answer. Prompts tell stations the
+ * rules; this refuses them in code when a station's shell command would break
+ * them anyway. Only inspects exec-style calls; anything else is allowed.
+ */
+export const permissionAllowed = (params: Record<string, unknown>): boolean => {
+  const toolCall = params.toolCall as { rawInput?: unknown } | undefined;
+  if (toolCall?.rawInput === undefined) {
+    return true;
+  }
+  const raw = JSON.stringify(toolCall.rawInput);
+  if (REMOTE_WRITE.test(raw)) {
+    return false;
+  }
+  if (GIT_IDENTITY_WRITE.test(raw)) {
+    return false;
+  }
+  if (GIT_PUSH.test(raw)) {
+    // pushes must name a factory/* branch, never force, never touch main/master
+    return (
+      raw.includes("factory/") &&
+      !FORCE_PUSH.test(raw) &&
+      !PROTECTED_REFSPEC.test(raw)
+    );
+  }
+  return true;
+};
+
 /**
  * One Devin agent session in its own `devin acp` process: a fresh context per
  * station, matching the eve pipeline's "stations inherit nothing" rule.
@@ -217,10 +252,34 @@ export class DevinSession {
         `${JSON.stringify({ id, jsonrpc: "2.0", ...body })}\n`
       );
     if (message.method === "session/request_permission") {
-      const params = message.params as {
+      const params = (message.params ?? {}) as {
         options?: Array<{ kind?: string; optionId?: string }>;
+        toolCall?: { title?: string };
       };
       const options = params.options ?? [];
+      if (!permissionAllowed(params)) {
+        const reject =
+          options.find((option) => String(option.kind).startsWith("reject")) ??
+          options[0];
+        respond(
+          reject === undefined
+            ? { result: { outcome: { outcome: "cancelled" } } }
+            : {
+                result: {
+                  outcome: {
+                    optionId: reject.optionId,
+                    outcome: "selected",
+                  },
+                },
+              }
+        );
+        this.onLog(
+          `[permission] denied by client guard: ${JSON.stringify(
+            (params.toolCall as { title?: string } | undefined)?.title ?? ""
+          )}`
+        );
+        return;
+      }
       const pick =
         options.find((option) => option.kind === "allow_once") ??
         options.find((option) => String(option.kind).startsWith("allow")) ??
