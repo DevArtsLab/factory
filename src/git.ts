@@ -8,8 +8,7 @@ const run = promisify(execFile);
 const BRANCH_PATTERN = /^factory\/[a-zA-Z0-9._/-]+$/u;
 const PROTECTED_BRANCH = /^(?:main|master)$/u;
 const ORIGIN_PREFIX = /^origin\//u;
-const REMOTE_REPO_PATTERN =
-  /github\.com[:/](?<repo>[^/]+\/[^/.]+?)(?:\.git)?$/u;
+const REMOTE_REPO_PATTERN = /github\.com[:/](?<repo>[^/]+\/[^/.]+?)(?:\.git)?$/u;
 
 export const git = async (args: string[], cwd: string): Promise<string> => {
   const { stdout } = await run("git", args, { cwd });
@@ -27,12 +26,13 @@ export const ensureClone = async (repo: string, dir: string): Promise<void> => {
     return;
   }
   await git(["fetch", "origin", "--prune"], dir);
+  await git(["remote", "set-head", "origin", "-a"], dir).catch(() => "");
 };
 
 export const defaultBranch = async (dir: string): Promise<string> => {
   const head = await git(
     ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"],
-    dir
+    dir,
   ).catch(() => "");
   return head.replace(ORIGIN_PREFIX, "") || "main";
 };
@@ -40,13 +40,13 @@ export const defaultBranch = async (dir: string): Promise<string> => {
 /** The branch a station claims it pushed, checked against the remote. */
 export const verifyRemoteBranch = async (
   dir: string,
-  branch: string
+  branch: string,
 ): Promise<boolean> => {
   if (!BRANCH_PATTERN.test(branch) || PROTECTED_BRANCH.test(branch)) {
     return false;
   }
   const out = await git(["ls-remote", "--heads", "origin", branch], dir).catch(
-    () => ""
+    () => "",
   );
   return out.includes(`refs/heads/${branch}`);
 };
@@ -59,7 +59,7 @@ export const openDraftPr = async (
   title: string,
   body: string,
   base: string,
-  head: string
+  head: string,
 ): Promise<string> => {
   const { stdout } = await run(
     "gh",
@@ -76,27 +76,16 @@ export const openDraftPr = async (
       "--head",
       head,
     ],
-    { cwd: dir }
+    { cwd: dir },
   );
   return stdout.trim();
 };
 
-export const issueText = async (
-  repo: string,
-  issue: number
-): Promise<string> => {
+export const issueText = async (repo: string, issue: number): Promise<string> => {
   const { stdout } = await run(
     "gh",
-    [
-      "issue",
-      "view",
-      String(issue),
-      "--repo",
-      repo,
-      "--json",
-      "number,title,body,url",
-    ],
-    { cwd: process.cwd() }
+    ["issue", "view", String(issue), "--repo", repo, "--json", "number,title,body,url"],
+    { cwd: process.cwd() },
   );
   const data = JSON.parse(stdout) as {
     body: string;
