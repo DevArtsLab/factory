@@ -15,7 +15,7 @@ The earlier version of this template ran on the eve framework; that version live
 - `src/git.ts` — clone (`ssh` remote, user's key), branch validation (`factory/*` only, never `main`/`master`), `gh` issue fetch + draft PR creation.
 - `src/cli.ts` — the `factory` entry point.
 - `prompts/*.md` — station procedures, adapted from the eve station `instructions.md` files: artifacts are real files in the run's artifacts dir, git ops are plain git.
-- `.factory/` (gitignored) — `repo/` is a shared cache clone (fetch-only); each run gets an isolated worktree at `runs/<ts>/repo` detached at the default branch's tip, so station commands can't leave stray files in a tree another run commits. `runs/<ts>/artifacts/` holds station handoff documents.
+- `.factory/` (gitignored) — `repos/<owner>__<name>/` is a per-target cache clone (fetch-only, so client projects never share a checkout); each run gets an isolated worktree at `runs/<ts>/repo` detached at the default branch's tip, so station commands can't leave stray files in a tree another run commits. `runs/<ts>/artifacts/` holds station handoff documents.
 
 ## Commands
 
