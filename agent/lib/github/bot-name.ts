@@ -70,6 +70,6 @@ export async function resolveBotName(): Promise<string> {
  * never change the pattern's meaning.
  */
 export function mentionPattern(botName: string): RegExp {
-  const escaped = botName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const escaped = botName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
   return new RegExp(`@${escaped}(?=$|[^A-Za-z0-9_-])`, "iu");
 }

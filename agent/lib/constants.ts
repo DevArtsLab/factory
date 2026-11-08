@@ -38,7 +38,7 @@ export const FACTORY_REPO = requireEnv("FACTORY_REPO", "acme/widgets");
 // adds dots and underscores. Catching a malformed value here fails discovery
 // with a clear message instead of a cryptic clone error on a station's first session.
 const FACTORY_REPO_PATTERN =
-  /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\/[A-Za-z0-9._-]+$/;
+  /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\/[A-Za-z0-9._-]+$/u;
 
 if (!FACTORY_REPO_PATTERN.test(FACTORY_REPO)) {
   throw new Error(

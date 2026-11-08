@@ -6,7 +6,7 @@ import { REVIEWER_OUTPUT_SCHEMA } from "../lib/stations/schemas.js";
  * Blocking wrapper the orchestrator calls to run the `reviewer` station.
  *
  * @remarks
- * - `defineAgent` has no `outputSchema` anymore; `ctx.agent()` takes one per call.
+ * - `defineAgent` has no `outputSchema` anymore; `send()` takes one per call.
  * - Named `run_reviewer`, not `reviewer`: the compiler rejects a tool and a local subagent with the same public name.
  */
 export default defineWorkflowTool({
@@ -19,10 +19,11 @@ export default defineWorkflowTool({
     "the analyst saved its full detail as one.",
   async execute({ message }, ctx) {
     "use workflow";
-    return await ctx.agent("reviewer", {
-      message,
+    const response = await ctx.agent("reviewer").send(message, {
       outputSchema: REVIEWER_OUTPUT_SCHEMA,
+      signal: ctx.abortSignal,
     });
+    return await response.result();
   },
   inputSchema: z.object({
     message: z

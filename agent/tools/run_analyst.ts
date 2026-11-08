@@ -6,7 +6,7 @@ import { ANALYST_OUTPUT_SCHEMA } from "../lib/stations/schemas.js";
  * Blocking wrapper the orchestrator calls to run the `analyst` station.
  *
  * @remarks
- * - `defineAgent` has no `outputSchema` anymore; `ctx.agent()` takes one per call.
+ * - `defineAgent` has no `outputSchema` anymore; `send()` takes one per call.
  * - Named `run_analyst`, not `analyst`: the compiler rejects a tool and a local subagent with the same public name.
  */
 export default defineWorkflowTool({
@@ -19,10 +19,11 @@ export default defineWorkflowTool({
     "save its own deep supporting detail as an analysis artifact and return the id.",
   async execute({ message }, ctx) {
     "use workflow";
-    return await ctx.agent("analyst", {
-      message,
+    const response = await ctx.agent("analyst").send(message, {
       outputSchema: ANALYST_OUTPUT_SCHEMA,
+      signal: ctx.abortSignal,
     });
+    return await response.result();
   },
   inputSchema: z.object({
     message: z

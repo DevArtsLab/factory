@@ -79,7 +79,7 @@ async function mintTokenOrExplain(
  * Characters allowed in a bot name interpolated into a shell-quoted git
  * config command.
  */
-const SAFE_BOT_NAME = /^[A-Za-z0-9._-]+$/;
+const SAFE_BOT_NAME = /^[A-Za-z0-9._-]+$/u;
 
 /**
  * The bot's commit identity, from the connector-resolved name.

@@ -10,7 +10,7 @@ const PROTECTED_BRANCHES = new Set(["main", "master"]);
  * has to match this, so shell metacharacters can never reach the command
  * line.
  */
-const BRANCH_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._/-]*[A-Za-z0-9])?$/;
+const BRANCH_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._/-]*[A-Za-z0-9])?$/u;
 
 /**
  * Where the station sandboxes keep the factory repository checkout.

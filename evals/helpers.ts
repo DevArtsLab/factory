@@ -1,4 +1,4 @@
-import type { MessageStreamEvent } from "eve/client";
+import type { SessionStreamEvent } from "eve/client";
 
 /**
  * Every write tool the `github` extension mounts, namespaced as the model
@@ -59,22 +59,27 @@ export const STATIONS = [
 
 /**
  * Returns the order in which subagents were first delegated to during a run,
- * extracted from `subagent.called` stream events.
+ * extracted from `task.started` stream events carrying `kind: "agent"`.
  *
  * @remarks
  * Station delegations are subagent calls, not tool calls, so ordering
  * assertions walk the subagent events rather than `t.toolOrder`.
  */
 export function subagentCallOrder(
-  events: readonly MessageStreamEvent[]
+  events: readonly SessionStreamEvent[]
 ): string[] {
   const order: string[] = [];
   for (const event of events) {
-    if (event.type !== "subagent.called") {
+    if (event.type !== "task.started") {
       continue;
     }
-    const { name } = event.data as { name?: unknown };
-    if (typeof name === "string" && !order.includes(name)) {
+    const data = event.data as { kind?: unknown; name?: unknown };
+    const { name } = data;
+    if (
+      data.kind === "agent" &&
+      typeof name === "string" &&
+      !order.includes(name)
+    ) {
       order.push(name);
     }
   }
@@ -86,7 +91,7 @@ export function subagentCallOrder(
  * the given order (other calls may interleave).
  */
 export function calledInOrder(
-  events: readonly MessageStreamEvent[],
+  events: readonly SessionStreamEvent[],
   names: readonly string[]
 ): boolean {
   const order = subagentCallOrder(events);

@@ -73,7 +73,7 @@ const RESERVED_NAMESPACES: Readonly<Record<string, ReservedNamespace>> = {
 };
 
 /** Leading slashes stripped from a pathname or URL path before the reserved-prefix check. */
-const LEADING_SLASHES = /^\/+/;
+const LEADING_SLASHES = /^\/+/u;
 
 /**
  * Find the reserved namespace a Blob pathname falls under, if any.

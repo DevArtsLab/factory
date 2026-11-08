@@ -238,7 +238,7 @@ export default githubChannel({
     };
     const hasFactoryLabel =
       Array.isArray(labels) &&
-      labels.some((entry) => entry?.name === FACTORY_LABEL);
+      labels.some((entry) => entry.name === FACTORY_LABEL);
     if (
       issue.action !== "labeled" ||
       !hasFactoryLabel ||

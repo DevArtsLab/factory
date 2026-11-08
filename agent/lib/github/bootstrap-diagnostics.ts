@@ -14,12 +14,12 @@ const MAX_DETAIL_LENGTH = 2000;
  * tokens embedded in remote URLs, and authorization header values.
  */
 const CREDENTIAL_PATTERNS = [
-  /\bgh[a-z]_[A-Za-z0-9_]{8,}\b/g,
-  /\bgithub_pat_[A-Za-z0-9_]{8,}\b/g,
-  /x-access-token:[^@\s"']+/gi,
-  /\b(?:authorization|proxy-authorization)\b\s*[:=][^\r\n]*/gi,
-  /\bbasic\s+[A-Za-z0-9+/=]{8,}/gi,
-  /\bbearer\s+[A-Za-z0-9._~+/=-]{8,}/gi,
+  /\bgh[a-z]_[A-Za-z0-9_]{8,}\b/gu,
+  /\bgithub_pat_[A-Za-z0-9_]{8,}\b/gu,
+  /x-access-token:[^@\s"']+/giu,
+  /\b(?:authorization|proxy-authorization)\b\s*[:=][^\r\n]*/giu,
+  /\bbasic\s+[A-Za-z0-9+/=]{8,}/giu,
+  /\bbearer\s+[A-Za-z0-9._~+/=-]{8,}/giu,
 ];
 
 /**
@@ -61,10 +61,10 @@ export function missingRepoMessage(repo: string): string {
 }
 
 const NOT_FOUND_EVIDENCE =
-  /repository[^\n]{0,200}not found|not found[^\n]{0,200}repository|could not read from remote repository/i;
+  /repository[^\n]{0,200}not found|not found[^\n]{0,200}repository|could not read from remote repository/iu;
 
 const AUTHORIZATION_EVIDENCE =
-  /authentication failed|authorization|permission denied|forbidden|error:? 403|access denied|invalid[^\n]{0,40}credential/i;
+  /authentication failed|authorization|permission denied|forbidden|error:? 403|access denied|invalid[^\n]{0,40}credential/iu;
 
 /**
  * Classifies a failed clone from its sanitized output.

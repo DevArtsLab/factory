@@ -50,8 +50,8 @@ export const ARTIFACT_KINDS = ["research-notes", "analysis"] as const;
 /**
  * Characters allowed in the slug portion of an artifact id.
  */
-const SLUG_DISALLOWED = /[^a-z0-9]+/g;
-const SLUG_TRIM = /^-+|-+$/g;
+const SLUG_DISALLOWED = /[^a-z0-9]+/gu;
+const SLUG_TRIM = /^-+|-+$/gu;
 
 /**
  * Shape every artifact id must match: `<kind>-<slug>-<suffix>`, lowercase and hyphenated.
@@ -60,7 +60,7 @@ const SLUG_TRIM = /^-+|-+$/g;
  * Anchored, with no dots or slashes permitted, so a validated id cannot traverse out of
  * {@link ARTIFACTS_PREFIX} when it is interpolated into a Blob key.
  */
-export const ARTIFACT_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const ARTIFACT_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 
 /**
  * Length of the random suffix appended to an artifact id.

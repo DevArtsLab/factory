@@ -6,7 +6,7 @@ import { CLASSIFIER_OUTPUT_SCHEMA } from "../lib/stations/schemas.js";
  * Blocking wrapper the orchestrator calls to run the `classifier` station.
  *
  * @remarks
- * - `defineAgent` has no `outputSchema` anymore; `ctx.agent()` takes one per call.
+ * - `defineAgent` has no `outputSchema` anymore; `send()` takes one per call.
  * - Named `run_classifier`, not `classifier`: the compiler rejects a tool and a local subagent with the same public name.
  */
 export default defineWorkflowTool({
@@ -17,10 +17,11 @@ export default defineWorkflowTool({
     "the work item verbatim in the message.",
   async execute({ message }, ctx) {
     "use workflow";
-    return await ctx.agent("classifier", {
-      message,
+    const response = await ctx.agent("classifier").send(message, {
       outputSchema: CLASSIFIER_OUTPUT_SCHEMA,
+      signal: ctx.abortSignal,
     });
+    return await response.result();
   },
   inputSchema: z.object({
     message: z

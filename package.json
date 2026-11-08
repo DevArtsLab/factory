@@ -20,18 +20,18 @@
     "validate": "pnpm run check && pnpm run typecheck && eve info"
   },
   "dependencies": {
-    "@github-tools/eve-extension": "^0.8.0",
-    "@vercel/blob": "^2.8.0",
-    "@vercel/connect": "^2.3.3",
-    "ai": "^7.0.120",
-    "eve": "^0.67.2",
-    "zod": "4.6.6"
+    "@github-tools/eve-extension": "^0.10.0",
+    "@vercel/blob": "^2.8.2",
+    "@vercel/connect": "^2.9.0",
+    "ai": "^7.0.165",
+    "eve": "^1.0.0-rc.6",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
-    "@types/node": "~24.19.0",
+    "@biomejs/biome": "^2.6.6",
+    "@types/node": "~24.19.2",
     "typescript": "7.0.2",
-    "ultracite": "^7.12.1"
+    "ultracite": "^8.1.1"
   },
   "engines": {
     "node": "24.x"
