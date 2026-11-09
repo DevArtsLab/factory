@@ -8,6 +8,7 @@ import {
   openDraftPr,
   originRepo,
 } from "./git.ts";
+import { startServer } from "./intake/server.ts";
 import { type PipelineReport, runPipeline } from "./pipeline.ts";
 
 // factory — drive the four-station pipeline with local `devin acp` sessions.
@@ -80,6 +81,7 @@ const parseArgs = (argv: string[]): Args => {
 const usage = `Usage:
   factory run --text "<work item>"      run the pipeline on a description
   factory run --issue <n>               run the pipeline on GitHub issue n
+  factory intake                        start the webhook intake daemon
 Options:
   --repo owner/name    target repo (default: this checkout's origin)
   --workdir <dir>      run directory override (default: .factory/runs/<ts>)
@@ -135,6 +137,10 @@ const recordRun = (
 
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
+  if (args.command === "intake") {
+    startServer();
+    return;
+  }
   if (args.command !== "run" || (!args.text && args.issue === undefined)) {
     console.error(usage);
     process.exit(args.command === "run" ? 1 : 0);
