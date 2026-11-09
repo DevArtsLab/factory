@@ -120,6 +120,8 @@ const validate = (name: string, data: Record<string, unknown>) => {
 
 export interface PipelineOptions {
   artifactsDir: string;
+  /** Test hook: force the first review to request changes so the revision loop runs once. */
+  forceRevision?: boolean;
   maxCycles?: number;
   onLog?: (line: string) => void;
   workdir: string;
@@ -271,6 +273,24 @@ export const runPipeline = async (
       .join("\n\n");
 
   let review = await runStation("reviewer", reviewInput(), opts);
+  if (opts.forceRevision && review.verdict === "approve") {
+    log(
+      "[pipeline] force-revision: injecting a blocking finding for the loop test"
+    );
+    review = {
+      ...review,
+      blocking_findings: [
+        {
+          evidence:
+            "injected by --force-revision to exercise the revision loop",
+          finding:
+            "Add a one-line note at the end of the changed files that revision cycle 1 ran.",
+          severity: "low",
+        },
+      ],
+      verdict: "request_changes",
+    };
+  }
 
   // stations are sequential by design: a revision waits on the review,
   // and the re-review waits on the push the revision delivers
