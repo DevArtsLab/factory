@@ -19,7 +19,7 @@ Foreman, the software factory, on local Devin CLI sessions. A work item (`--text
 
 ## Trust boundaries
 
-1. **GitHub webhook -> intake daemon**: anyone who can reach the port; only holders of `FACTORY_WEBHOOK_SECRET` pass the HMAC. Exposure of the port (localhost only, `gh webhook forward`, or a public tunnel) is an open question.
+1. **GitHub webhook -> intake daemon**: internet-facing — the daemon is exposed publicly via Cloudflare Tunnel at `https://intake.devartslab.com` and backed by repo webhook `709343032`. Only holders of `FACTORY_WEBHOOK_SECRET` (vault `/shared`) pass the HMAC; the sole additional control is the 1 MiB body cap — no rate limiting, no IP restriction.
 2. **Issue / work-item text -> station sessions** (baseline boundary 4): issue title and body are pasted verbatim into every station prompt, and later into the draft PR body and the brain. Station sessions run with full shell, the owner's env, credentials and ssh key, and auto-approved permissions. This is the dominant boundary.
 3. **Target repository content -> station sessions**: the cloned repo (READMEs, AGENTS.md, code, scripts the implementer runs as "the repo's own checks") is untrusted input that executes on the host.
 4. **Station output -> orchestrator**: JSON from stations (branch names, summaries, verdicts) is untrusted; it drives `git fetch`, `gh pr create`, brain writes and issue comments.
@@ -59,9 +59,13 @@ Per baseline, weighted equally [owner]:
 
 - None [owner, baseline]: every attacker profile matters, so scanner severities generally stand. The lab owner acting with intent and physical access are not modeled.
 
-## Open questions (asked 2026-11-09, unanswered)
+## Findings (promoted from open questions, 2026-11-09)
 
-1. Where does the intake daemon run and is its port reachable from the internet (localhost + `gh webhook forward`, public tunnel, server)?
-2. Whose issue text can reach the stations: only the owner's (private repos), or outsiders' on public repos, or any collaborator via an org-wide webhook? Can an issue be edited after it is labeled?
-3. Does the baseline apply unchanged, or is A5 ruled out for factory (single-user Mac)?
-4. Is there an infrastructure repository (e.g. `DevArtsLab/env`, `DevArtsLab/config`) to include? Assumed none.
+- **Public intake surface**: `intake.devartslab.com` is a live internet endpoint protected only by HMAC — boundary 1 is not hypothetical. Rate limiting and a labeler check are the obvious follow-ups.
+- **Q2 sharpened**: the repo is public, so any GitHub user can author issue text; a collaborator's `factory` label then fires it into owner-credentialed sessions. The labeler is trusted but the content is not — needs a control before intake is wired to more repos.
+
+## Open questions (remaining)
+
+1. Whose issue text should be able to reach stations in practice: owner-only, org members, or anyone on public repos? Can an issue be edited after labeling (TOCTOU)?
+2. Does the baseline apply unchanged, or is A5 ruled out for factory (single-user Mac)?
+3. The secrets layer is `DevArtsLab/vault` + `DevArtsLab/registry` (infra, self-hosted Infisical) — include in scope?
