@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { appendBrain, loadBrain } from "./brain.ts";
 import {
@@ -7,6 +8,7 @@ import {
   issueText,
   openDraftPr,
   originRepo,
+  withRepoLock,
 } from "./git.ts";
 import { startServer } from "./intake/server.ts";
 import { type PipelineReport, runPipeline } from "./pipeline.ts";
@@ -84,7 +86,7 @@ const usage = `Usage:
   factory intake                        start the webhook intake daemon
 Options:
   --repo owner/name    target repo (default: this checkout's origin)
-  --workdir <dir>      run directory override (default: .factory/runs/<ts>)
+  --workdir <dir>      run directory override (default: .factory/runs/<ts>-<id>)
   --cycles <n>         max implementer revision cycles (default: 2)
   --no-pr              stop before opening the draft PR
   --force-revision     test hook: inject a finding so the revision loop runs once
@@ -151,13 +153,23 @@ const main = async () => {
   const cloneDir = path.resolve(
     `.factory/repos/${repo.replaceAll(/[^a-zA-Z0-9._-]/gu, "__")}`
   );
-  const runId = new Date().toISOString().replaceAll(/[:.]/gu, "-").slice(0, 19);
+  // Timestamp for readability, random suffix so concurrent runs (intake
+  // deliveries landing in the same second) never share a run directory.
+  const runId = `${new Date()
+    .toISOString()
+    .replaceAll(/[:.]/gu, "-")
+    .slice(0, 19)}-${randomUUID().slice(0, 8)}`;
   const runDir = path.resolve(args.workdir ?? `.factory/runs/${runId}`);
   const artifactsDir = path.join(runDir, "artifacts");
 
-  await ensureClone(repo, cloneDir);
-  const base = await defaultBranch(cloneDir);
-  const workdir = await addWorktree(cloneDir, runDir, base);
+  const { base, workdir } = await withRepoLock(cloneDir, async () => {
+    await ensureClone(repo, cloneDir);
+    const defaultBase = await defaultBranch(cloneDir);
+    return {
+      base: defaultBase,
+      workdir: await addWorktree(cloneDir, runDir, defaultBase),
+    };
+  });
   console.error(`repo: ${repo} -> ${workdir} (base ${base})`);
 
   const onLog = args.verbose

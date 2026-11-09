@@ -16,7 +16,7 @@ The earlier version of this template ran on the eve framework; that version live
 - `src/intake/server.ts` — webhook intake daemon (`pnpm factory intake`): verifies `X-Hub-Signature-256` on `POST /webhook`, and on an `issues`/`labeled`/`factory` event spawns a detached, deduplicated `cli.ts run --issue <n> --repo <repo>` logging to `.factory/runs/intake-<n>.log`. `GET /health` for liveness. Env: `FACTORY_WEBHOOK_SECRET` (required), `FACTORY_INTAKE_PORT` (default 3210), `FACTORY_INTAKE_DRY_RUN`, `FACTORY_INTAKE_COMMENT`.
 - `src/cli.ts` — the `factory` entry point.
 - `prompts/*.md` — station procedures, adapted from the eve station `instructions.md` files: artifacts are real files in the run's artifacts dir, git ops are plain git.
-- `.factory/` (gitignored) — `repos/<owner>__<name>/` is a per-target cache clone (fetch-only, so client projects never share a checkout); each run gets an isolated worktree at `runs/<ts>/repo` detached at the default branch's tip, so station commands can't leave stray files in a tree another run commits. `runs/<ts>/artifacts/` holds station handoff documents.
+- `.factory/` (gitignored) — `repos/<owner>__<name>/` is a per-target cache clone (fetch-only, so client projects never share a checkout); each run gets an isolated worktree at `runs/<ts>-<id>/repo` detached at the default branch's tip, so station commands can't leave stray files in a tree another run commits. `runs/<ts>-<id>/artifacts/` holds station handoff documents.
 
 ## Commands
 

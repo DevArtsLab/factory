@@ -120,14 +120,28 @@ export const startServer = (options: IntakeOptions = {}): http.Server => {
   const comment = options.comment ?? process.env.FACTORY_INTAKE_COMMENT === "1";
   const inFlight = new Set<string>();
 
-  const spawnRun = (repo: string, issue: number, key: string): void => {
+  // Resolves once the child is actually running (`spawn` event), false on any
+  // launch failure, so the handler can return non-2xx and GitHub keeps the
+  // delivery as failed (redeliverable) instead of silently dropping it.
+  const spawnRun = (
+    repo: string,
+    issue: number,
+    key: string
+  ): Promise<boolean> => {
     const logPath = path.join(RUNS_DIR, `intake-${issue}.log`);
     if (dryRun) {
       // The key stays in `inFlight` — a dry-run "run" never finishes, so
       // repeat deliveries no-op until the daemon restarts.
       log(`dry-run: would spawn run --issue ${issue} --repo ${repo}`);
-      return;
+      return Promise.resolve(true);
     }
+    const fail = (error: unknown): boolean => {
+      inFlight.delete(key);
+      log(
+        `spawn ${key} failed: ${error instanceof Error ? error.message : error}`
+      );
+      return false;
+    };
     let fd: number | null = null;
     try {
       fs.mkdirSync(RUNS_DIR, { recursive: true });
@@ -140,26 +154,25 @@ export const startServer = (options: IntakeOptions = {}): http.Server => {
       child.unref();
       fs.closeSync(fd);
       fd = null;
-      child.on("error", (error: Error) => {
-        inFlight.delete(key);
-        log(`spawn ${key} failed: ${error.message}`);
+      return new Promise((resolve) => {
+        child.once("spawn", () => {
+          log(`spawned ${key} (pid ${String(child.pid)}) -> ${logPath}`);
+          child.on("close", (code) => {
+            inFlight.delete(key);
+            log(`run ${key} exited ${String(code)}`);
+            if (comment) {
+              postComment(repo, issue, code, logPath);
+            }
+          });
+          resolve(true);
+        });
+        child.once("error", (error: Error) => resolve(fail(error)));
       });
-      child.on("close", (code) => {
-        inFlight.delete(key);
-        log(`run ${key} exited ${String(code)}`);
-        if (comment) {
-          postComment(repo, issue, code, logPath);
-        }
-      });
-      log(`spawned ${key} (pid ${String(child.pid)}) -> ${logPath}`);
     } catch (error) {
       if (fd !== null) {
         fs.closeSync(fd);
       }
-      inFlight.delete(key);
-      log(
-        `spawn ${key} failed: ${error instanceof Error ? error.message : error}`
-      );
+      return Promise.resolve(fail(error));
     }
   };
 
@@ -209,7 +222,10 @@ export const startServer = (options: IntakeOptions = {}): http.Server => {
       return;
     }
     inFlight.add(key);
-    spawnRun(repo, issue, key);
+    if (!(await spawnRun(repo, issue, key))) {
+      send(res, 500, { error: "failed to start run" });
+      return;
+    }
     send(res, 200, { status: dryRun ? "dry-run" : "spawned" });
   };
 

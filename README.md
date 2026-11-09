@@ -34,7 +34,7 @@ export FACTORY_INTAKE_PORT=3210                  # optional, default 3210
 pnpm factory intake
 ```
 
-`POST /webhook` verifies `X-Hub-Signature-256` against the secret, then spawns a detached run for `issues` events with `action: "labeled"` and label `factory`. Each run logs to `.factory/runs/intake-<n>.log`; an issue already in-flight is deduplicated (in-memory — a daemon restart can re-trigger on a redelivery). `GET /health` returns `{"ok": true}`.
+`POST /webhook` verifies `X-Hub-Signature-256` against the secret, then spawns a detached run for `issues` events with `action: "labeled"` and label `factory`. Each run logs to `.factory/runs/intake-<n>.log`; an issue already in-flight is deduplicated (in-memory — a daemon restart can re-trigger on a redelivery). If the run cannot be launched (log unwritable, spawn error) the webhook answers `500`, so the delivery stays failed in GitHub and can be redelivered. Concurrent runs are safe: each gets its own `.factory/runs/<ts>-<id>/` directory, and clone/fetch/worktree setup on a target repo's cache clone is serialized by a cross-process lock (`.factory/repos/<owner>__<name>.lock`). `GET /health` returns `{"ok": true}`.
 
 Optional env vars: `FACTORY_INTAKE_DRY_RUN=1` logs the spawn intent without running anything; `FACTORY_INTAKE_COMMENT=1` posts a success/failure comment on the issue when the run exits (with the draft PR link when the log has one).
 
