@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { promisify } from "node:util";
 
 const run = promisify(execFile);
@@ -14,6 +15,78 @@ const REMOTE_REPO_PATTERN =
 export const git = async (args: string[], cwd: string): Promise<string> => {
   const { stdout } = await run("git", args, { cwd });
   return stdout.trim();
+};
+
+const LOCK_POLL_MS = 250;
+const LOCK_TIMEOUT_MS = 15 * 60 * 1000;
+const LOCK_ORPHAN_MS = 30 * 1000;
+
+const pidAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+/** A lock whose owner died, or that never got an owner pid written. */
+const lockIsStale = (lockDir: string): boolean => {
+  try {
+    const pid = Number.parseInt(
+      fs.readFileSync(path.join(lockDir, "pid"), "utf8"),
+      10
+    );
+    if (Number.isInteger(pid) && pid > 0) {
+      return !pidAlive(pid);
+    }
+  } catch {
+    // pid not written yet (or unreadable): fall back to the lock's age
+  }
+  try {
+    return Date.now() - fs.statSync(lockDir).mtimeMs > LOCK_ORPHAN_MS;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Cross-process mutex on a target repo's cache clone. Concurrent runs
+ * (e.g. intake deliveries for two issues) would otherwise race `git clone`
+ * into the same directory, or fetch/add worktrees on it at the same time.
+ */
+export const withRepoLock = async <T>(
+  cloneDir: string,
+  fn: () => Promise<T>
+): Promise<T> => {
+  const lockDir = `${cloneDir}.lock`;
+  fs.mkdirSync(path.dirname(lockDir), { recursive: true });
+  const deadline = Date.now() + LOCK_TIMEOUT_MS;
+  const acquire = async (): Promise<void> => {
+    try {
+      fs.mkdirSync(lockDir);
+      return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        throw error;
+      }
+    }
+    if (lockIsStale(lockDir)) {
+      fs.rmSync(lockDir, { force: true, recursive: true });
+    } else if (Date.now() > deadline) {
+      throw new Error(`timed out waiting for repo lock ${lockDir}`);
+    } else {
+      await sleep(LOCK_POLL_MS);
+    }
+    return acquire();
+  };
+  await acquire();
+  try {
+    fs.writeFileSync(path.join(lockDir, "pid"), String(process.pid));
+    return await fn();
+  } finally {
+    fs.rmSync(lockDir, { force: true, recursive: true });
+  }
 };
 
 /**
