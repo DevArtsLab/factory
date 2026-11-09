@@ -10,3 +10,5 @@ dist
 .DS_Store
 *.tsbuildinfo
 .factory/
+config/env/*.env
+!config/env/*.example.env

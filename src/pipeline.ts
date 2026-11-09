@@ -120,6 +120,8 @@ const validate = (name: string, data: Record<string, unknown>) => {
 
 export interface PipelineOptions {
   artifactsDir: string;
+  /** Per-repo durable notes, injected into station context when non-empty. */
+  brain?: string;
   /** Test hook: force the first review to request changes so the revision loop runs once. */
   forceRevision?: boolean;
   maxCycles?: number;
@@ -152,7 +154,11 @@ export const runStation = async (
   const log = opts.onLog ?? (() => undefined);
   const message =
     readPrompt(name) +
-    `\n\n# Context\n\nArtifacts directory (absolute): ${opts.artifactsDir}\n\n# Input\n\n` +
+    `\n\n# Context\n\nArtifacts directory (absolute): ${opts.artifactsDir}\n` +
+    (opts.brain
+      ? `\nFactory brain (durable notes from earlier runs):\n\n${opts.brain}\n`
+      : "") +
+    "\n# Input\n\n" +
     input +
     OUTPUT_CONTRACT(name);
   log(`[station:${name}] starting devin session`);

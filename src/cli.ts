@@ -1,4 +1,5 @@
 import path from "node:path";
+import { appendBrain, loadBrain } from "./brain.ts";
 import {
   addWorktree,
   defaultBranch,
@@ -109,6 +110,29 @@ const summarize = (report: PipelineReport): void => {
   }
 };
 
+const recordRun = (
+  repo: string,
+  workItem: string,
+  report: PipelineReport
+): void => {
+  const limitations = Array.isArray(report.implementation?.known_limitations)
+    ? report.implementation.known_limitations.join("; ").slice(0, 200)
+    : "";
+  appendBrain(
+    repo,
+    [
+      `${report.status}: ${String(report.classification?.type ?? "?")} — ${String(
+        report.classification?.summary ?? workItem
+      ).slice(0, 120)}`,
+      report.branch ? `branch ${report.branch}` : null,
+      report.review?.verdict ? `verdict ${report.review.verdict}` : null,
+      limitations ? `limitations: ${limitations}` : null,
+    ]
+      .filter(Boolean)
+      .join("; ")
+  );
+};
+
 const main = async () => {
   const args = parseArgs(process.argv.slice(2));
   if (args.command !== "run" || (!args.text && args.issue === undefined)) {
@@ -138,8 +162,10 @@ const main = async () => {
         }
       };
 
+  const brain = loadBrain(repo);
   const report = await runPipeline({
     artifactsDir,
+    brain,
     forceRevision: args.forceRevision,
     maxCycles: args.cycles,
     onLog,
@@ -177,6 +203,7 @@ const main = async () => {
     console.error(`draft PR: ${url}`);
   }
 
+  recordRun(repo, workItem, report);
   summarize(report);
   console.log(JSON.stringify(report, null, 2));
   process.exit(report.status === "ready" ? 0 : 1);
