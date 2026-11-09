@@ -1,6 +1,6 @@
 # factory threat model (DevArtsLab/factory, branch `devin-factory`)
 
-Status: draft 1, 2026-11-09. Extends the DevArtsLab org baseline (`DevArtsLab/foundation` `md/security/LAB-THREAT-MODEL.md`, revision 3); where the two differ, this file wins for factory. Facts marked **[owner]** come from the lab owner (via the baseline); everything else is **[inferred]** from the code at commit `83ff12d` and has not been confirmed yet. Per lab convention it lives at `md/security/threat-model.md`; security scans of factory start from it.
+Status: draft 1, 2026-11-09. Extends the DevArtsLab org baseline (`DevArtsLab/foundation` `concepts/threat-model-lab.md`, revision 3); where the two differ, this file wins for factory. Facts marked **[owner]** come from the lab owner (via the baseline); everything else is **[inferred]** from the code at commit `83ff12d` and has not been confirmed yet. Per lab convention it lives at `docs/security/threat-model.md`; security scans of factory start from it.
 
 ## System overview
 
