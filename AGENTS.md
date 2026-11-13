@@ -6,7 +6,7 @@ Guidance for AI coding agents working in this repository.
 
 Foreman, the software factory, reimplemented on top of local Devin sessions. A work item (text or a GitHub issue) goes through four stations — **classifier** (triage) → **analyst** (plan + acceptance criteria) → **implementer** (codes, verifies, pushes a `factory/*` branch) → **reviewer** (independent verdict on the pushed branch, max 2 revision cycles) — and an approved branch becomes a draft pull request. Each station runs as a fresh `devin acp` session on the local Devin CLI, so station compute rides on the user's Devin plan instead of a hosted agent framework.
 
-The earlier version of this template ran on the eve framework; that version lives on `main`. This branch (`devin-factory`) has no eve code left.
+The earlier version of this template ran on the eve framework; that version lives on `eve-factory`. `main` is the default branch and holds the current Devin-session implementation (developed on `devin-factory`, now identical). This codebase has no eve code left.
 
 ## Layout
 
